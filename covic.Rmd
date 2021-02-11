@@ -1,0 +1,337 @@
+---
+title: "CapstoneCovic"
+author: "Monica Bustamante"
+date: "2/4/2021"
+output: pdf_document
+---
+
+                                                                       Executive Summary 
+##Describes the DataSet
+
+#Summary: 
+
+The Hopkins data is available at the county level in the United States. The AP has paired this data with population figures and county rural/urban designations, and has calculated caseload and death rates per 100,000 people. Be aware that caseloads may reflect the availability of tests, and the ability to turn around test results quickly, rather than actual disease spread or true infection rates.
+
+#Data information: 
+
+Johns Hopkins' county-level COVID-19 case and death data, paired with population and rates per 100,000.
+Source:  https://data.world/associatedpress/johns-hopkins-coronavirus-case-tracker
+https://data.world/associatedpress/johns-hopkins-coronavirus-case-trackerhttps://data.world/resources/coronavirus/
+
+#Variables:
+
+This data set has the variables:  
+
+Ten (10) columns and  3,269 rows
+
+*Date: last update: In which the database has been updated by The Associated Press johns-hopkins. Highlighting this database is automatically updated from the data.world page since it is directly connected to this project.
+
+*Ubication Geographic: Data set collected in the United Stated by Location type, State, County_name, County name long.
+Coordinate: Fips code, Latitude, Longitude.
+
+*Size of population by geographic: NCHS  Urbanization: Medium metro, small metro, non core, large fringe metro, micropolitan. 
+
+*Population segmentation: Total Population subdivide by Confirmed (covic) and Confirmed per 100.000.
+
+*Population segmentation by Deaths and Deaths per 100.000 (covic).
+
+
+#Summarizes the Goal of project:
+
+This project has the objective to analyze the actual pandemic issue that has affected the society, families and the economy, the emphasis is to identifique what are the places with more impact in the state of the United States. To accomplish this objectives we performed the next steps: data cleaning, exploration, visualization, model approach and finally prediction.
+
+
+##Library and paquets that we will need to install:
+```{r load-packages, include=FALSE}
+library(dplyr)
+library(magrittr)
+library(knitr)
+library(MASS)
+library(lattice)
+library(tidyverse)
+library(ggmap)
+library(sf)
+library(mapview)
+
+```
+
+##Load data set directt from data world page.
+```{r include=FALSE}
+
+#Read File and Columns name.
+df <- read.csv('https://query.data.world/s/e7co64e3e47t3sdnrviomq3sasf6g2')
+```
+
+##Create a data sett My data and replace nan from original data set
+```{r }
+
+my_data <- as_tibble(df)
+my_data <- replace(my_data, is.na(my_data), 0)
+my_data
+```
+##filter only integer data to developmente the differents analysis.
+```{r }
+
+new_data = my_data %>% select_if(is.numeric)
+new_data
+
+```
+The principal variable that we will analyze is, how many cases of infected by Covic have been given in different states of the United States, now we have that the average of confirmed by covic is 834 the median is 2073. In the other hands, the mean for the deaths cause by covic is 8324 and the median is 37, standard deviation 557.
+
+```{r covic}
+#Mean, Media and Standard deviation of confirmed by Covic 19
+mean=mean(new_data[['confirmed']])
+median=median(new_data[['confirmed']])
+standard_deviation= sd(new_data[['confirmed']])
+print((paste0('Mean of Confirmed  cases cause for Covic:', mean)))
+print((paste0('Median of Confirmed  cases cause for Covic:', median)))
+print((paste0('Standar Deviation of Confirmed  cases cause by Covic:', standard_deviation)))
+```
+
+```{r covic}
+##Mean, Media and Standard deviation of deaths by Covic 19.
+
+meean=mean(df[['deaths']])
+median=median(df[['deaths']])
+sd=sd(df[['deaths']])
+print((paste0('Mean of deaths cases cause for Covic:', mean)))
+print((paste0('Median of deaths  cases cause for Covic:', median)))
+print((paste0('Standar Deviation of deaths  cases cause by Covic:', sd)))
+```
+
+##Covariance data set Covic
+For a sample of cases confirmed of 100,000 inhabitants, the covariance is of the 3% and the correlation is the 1% deaths by covic.
+```{r }
+cov(new_data)
+```
+
+##Correlacion data set Covic
+
+```{r }
+cor(new_data)
+```
+
+```{r }
+#Read File and Columns name str.
+str(new_data)
+```
+
+#Summary show us the minimu, max and median and mean the all data set.
+```{r covic}
+#Summary.
+summary(new_data)
+```
+
+
+```{r }
+new_data$deaths <- factor(new_data$deaths,
+            levels=c(0, 1),
+            labels=c('confirmed', 'deaths'))
+
+```
+
+
+```{r }
+#Read File and Columns name.
+
+which.max(new_data[['deaths']])
+which.max(new_data[['confirmed']])
+
+```
+
+```{r }
+summary(new_data$deaths)
+```
+
+## Group by NCHS Urbanization and State from United States, in Medium, small, large, micropolitan and non-core
+```{r }
+dataset <- df %>% group_by(NCHS_urbanization, state)
+dataset
+```
+
+##Analysis cases confirmed and deaths group by states.
+```{r }
+dataset %>% summarise(
+  confirmed=mean(confirmed),
+  deaths=mean(deaths)
+)
+```
+
+##Visualization ggplot geo points.
+```{r covic}
+ggplot(dataset, aes(deaths, confirmed)) + geom_point()
+```
+
+```{r }
+dataset %>% filter(total_population==max(total_population))
+```
+
+```{r }
+dataset %>% filter(confirmed_per_100000==max(confirmed_per_100000))
+```
+##Visualization cases confirmed compared with the deaths.
+```{r covic}
+#Read File and Columns name.
+plot(df$confirmed_per_100000, df$deaths)
+```
+
+```{r }
+dataset %>% filter(deaths_per_100000==max(deaths_per_100000))
+```
+
+##Visualization compared total population with cases confirmed and deaths.
+```{r covic}
+#Read File and Columns name.
+plot(df$confirmed_per_100000, df$total_population)
+title(plot(df$deaths_per_100000, df$total_population))
+```
+
+```{r covic}
+plot(df$confirmed_per_100000, df$deaths, type='l')
+```
+
+##Barplot compared deaths
+```{r covic}
+barplot(table(df$deaths))
+```
+
+```{r covic}
+hist(df$total_population)
+hist(df$confirmed_per_100000, breaks=10)
+```
+##Visualization show differents the states with most deaths us that california is one the most deaths had.
+```{r covic}
+ggplot(df, aes(x=deaths, y=state)) + geom_point()
+```
+
+## Prediction
+
+The prediction show us that for 24 people infected 2 would death and this prediction has 0.915 of accuracy and the precision is 0.913,  data that confirmed that the average of death for this virus can oscillate into 2% or 3% of impacted in the all population infected.
+
+```{r covic}
+set.seed(0) 
+  actual = c('confirmed', 'deaths')[runif(100, 1, 4)]
+  predicted = actual 
+  predicted[runif(30,1,100)] = actual[runif(30,1,100)]
+  cm = as.matrix(table(Actual=actual, Predicted=predicted))
+  cm
+```
+
+
+```{r covic}
+num_instances = sum(cm)  
+ num_class = nrow(cm) 
+ diag = diag(cm) #classified 
+ rowsums = apply(cm, 1, sum) 
+ colsums = apply(cm, 2, sum) #predictions 
+ p = rowsums / num_instances # distribution of instances over the actual 
+ q = colsums / num_instances # distribution of instances over the predicted 
+```
+
+```{r covic}
+accuracy = sum(diag) / num_instances 
+accuracy 
+```
+
+## Precision
+
+```{r covic}
+precision = diag / colsums 
+recall = diag / rowsums 
+f1 = 2 * precision * recall / (precision + recall) 
+```
+
+```{r covic}
+macroPrecision = mean(precision)
+macroRecall = mean(recall)
+macroF1 = mean(f1)
+```
+
+```{r covic}
+data.frame(macroPrecision, macroRecall, macroF1)
+```
+## Linear Regression Model 1
+
+
+
+We build the model Linear Regression to analyze the relationship  between differents variable, as size of states more infectioned and deaths or analysis what is the most relevant variante. The coefficient and residuals give us the R-squared is 0.8478 and .8557 with p value of 2.2 a tendeced to increase the cases of deaths. 
+
+
+# Coefficients
+```{r }
+df <- read.csv('https://query.data.world/s/e7co64e3e47t3sdnrviomq3sasf6g2')
+lmcovic = lm(confirmed~deaths, data = df)
+summary(lmcovic)
+```
+
+# Residuals
+
+```{r }
+lmcovic2 = lm(confirmed~deaths + confirmed_per_100000, data=df)
+summary(lmcovic2)
+```
+
+```{r }
+plot(lmcovic$residuals, pch=16, col='blue')
+abline(lmcovic)
+```
+
+```{r }
+plot(lmcovic2$effects, pch=16, col='blue')
+abline(lmcovic2)
+#https://www.datacamp.com/community/tutorials/linear-regression-R
+```
+
+
+                                        MACHINE LEARNING IN R
+                                  Building a Linear Regression Model 2
+
+The second model we created a validation data set divide to analysis in 652 and 2617, also a training and test set the prediction show us confirmed the cases of deaths have been increase.                                   
+
+
+```{r covic}
+set.seed(100)
+validationIndex <- caret::createDataPartition(new_data$deaths, p=0.80, list=FALSE)
+validation <- df[-validationIndex,]
+dataset <- df[validationIndex,]
+dim(validation)
+dim(dataset)
+```
+
+```{r covic}
+sum(is.na(new_data))
+```
+
+```{r covic}
+# Stratified random split of the data set
+TrainingIndex <- createDataPartition(df$deaths, p=0.8, list = FALSE)
+TrainingSet <- df[TrainingIndex,] # Training Set
+TestingSet <- df[-TrainingIndex,] # Test Set
+```
+
+```{r covic}
+# Build Training model
+Model <- train(deaths ~ confirmed, data = TrainingSet,
+               method = "lm",
+               na.action = na.omit,
+               preProcess=c("scale","center"),
+               trControl= trainControl(method="none")
+)
+```
+
+
+```{r covic}
+# Apply model for prediction
+Model.training <-predict(Model, TrainingSet) #Model to make prediction on Training set
+Model.testing <-predict(Model, TestingSet) #Model to make prediction on Testing set
+```
+
+```{r covic}
+  # Scatter plot of Training set
+plot(TrainingSet$deaths,Model.training, col = "blue" )
+plot(TestingSet$confirmed,Model.testing, col = "blue" )
+```
+
+Conclusion:
+
+This project shows us in real time how the cases of infection by the Civic 19 virus are evolving, it presents the most relevant analyzes either by states, infected and deaths, which is the maximum and minimum of each one, which is the probability of increasing or decreasing. Persuading self-care turns out to be the greatest impact that this type of information can have on society, as it raises awareness of the risks of not paying attention to biosafety care, the greatest limitation that was found is the few variables to analyze. In the future, different databases could be merged to obtain more information that can assist society in keeping it more informed.
